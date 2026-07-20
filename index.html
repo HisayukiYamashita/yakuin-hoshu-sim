@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>役員報酬×賞与 社会保険最適化シミュレーター</title>
+<meta name="description" content="月額報酬と事前確定届出給与（賞与）の配分による社会保険料・税金・手取りの変化を試算できるシミュレーター。令和8年度・東京都協会けんぽ料率対応。">
+<style>
+  :root{
+    --navy:#1f3864; --navy-l:#2c4a7c; --lblue:#d9e2f3; --green:#38761d; --green-l:#d9ead3;
+    --yellow:#fff2cc; --gray:#f3f3f3; --text:#222; --sub:#666; --red:#b45309;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans",Meiryo,sans-serif; color:var(--text); background:#f7f8fa; line-height:1.6;}
+  header{background:var(--navy); color:#fff; padding:28px 16px 22px;}
+  header .wrap{max-width:1080px; margin:0 auto;}
+  header h1{font-size:1.35rem; letter-spacing:.02em;}
+  header p{font-size:.8rem; opacity:.85; margin-top:6px;}
+  main{max-width:1080px; margin:0 auto; padding:20px 16px 60px;}
+  .grid{display:grid; grid-template-columns:340px 1fr; gap:20px;}
+  @media(max-width:860px){.grid{grid-template-columns:1fr;}}
+  .card{background:#fff; border-radius:10px; box-shadow:0 1px 4px rgba(0,0,0,.08); padding:20px; margin-bottom:20px;}
+  .card h2{font-size:1rem; color:var(--navy); border-left:4px solid var(--navy); padding-left:10px; margin-bottom:14px;}
+  label{display:block; font-size:.82rem; color:var(--sub); margin-top:12px;}
+  input[type=number], select{width:100%; padding:9px 10px; font-size:1rem; border:1.5px solid #ccd3e0; border-radius:6px; background:var(--yellow); margin-top:3px;}
+  input[type=number]:focus{outline:2px solid var(--navy-l);}
+  input[type=range]{width:100%; margin-top:8px; accent-color:var(--navy);}
+  .note{font-size:.72rem; color:var(--sub); margin-top:4px;}
+  .conclusion{background:var(--green-l); border-radius:10px; padding:18px 20px; margin-bottom:20px; border:1px solid #bcd6b0;}
+  .conclusion h2{color:var(--green); font-size:1.05rem; margin-bottom:8px; border:none; padding:0;}
+  .conclusion .big{font-size:1.7rem; font-weight:bold; color:var(--green);}
+  .conclusion ul{list-style:none; margin-top:8px;}
+  .conclusion li{font-size:.92rem; padding:2px 0;}
+  .conclusion li b{color:var(--green);}
+  table{width:100%; border-collapse:collapse; font-size:.88rem;}
+  th,td{padding:8px 10px; text-align:right; border-bottom:1px solid #e7eaf0; white-space:nowrap;}
+  th:first-child, td:first-child{text-align:left; white-space:normal;}
+  thead th{background:var(--navy); color:#fff; text-align:center; font-weight:600;}
+  tr.sec td{background:var(--lblue); color:var(--navy); font-weight:bold;}
+  tr.hl td{background:var(--green-l); color:var(--green); font-weight:bold;}
+  tr.tot td{background:var(--gray); font-weight:bold;}
+  .pos{color:var(--green); font-weight:bold;}
+  .neg{color:var(--red); font-weight:bold;}
+  .bars{display:flex; gap:26px; align-items:flex-end; height:190px; margin:18px 8px 4px; justify-content:center;}
+  .barcol{display:flex; flex-direction:column; align-items:center; width:120px;}
+  .stack{display:flex; flex-direction:column-reverse; width:100%; height:150px; border-radius:6px 6px 0 0; overflow:hidden;}
+  .seg-net{background:var(--green);}
+  .seg-tax{background:#e8b64c;}
+  .seg-sha{background:#c0504d;}
+  .barlabel{font-size:.78rem; color:var(--sub); margin-top:6px; text-align:center;}
+  .legend{display:flex; gap:16px; justify-content:center; font-size:.75rem; color:var(--sub); margin-bottom:6px;}
+  .legend span::before{content:"■ "; }
+  .lg-net::before{color:var(--green);} .lg-tax::before{color:#e8b64c;} .lg-sha::before{color:#c0504d;}
+  button{background:var(--navy); color:#fff; border:none; border-radius:6px; padding:10px 16px; font-size:.9rem; cursor:pointer; margin-top:14px; width:100%;}
+  button:hover{background:var(--navy-l);}
+  details{margin-top:14px; font-size:.85rem;}
+  summary{cursor:pointer; color:var(--navy); font-weight:600;}
+  .warn{background:#fff8e6; border:1px solid #eeddaa; border-radius:10px; padding:16px 18px; font-size:.8rem; color:#664d1a;}
+  .warn h3{font-size:.9rem; margin-bottom:6px;}
+  .warn li{margin-left:1.2em; margin-top:3px;}
+  footer{text-align:center; font-size:.75rem; color:var(--sub); padding:20px 0 40px;}
+  #optResult{font-size:.85rem; margin-top:10px; background:var(--lblue); border-radius:6px; padding:10px 12px; display:none;}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>役員報酬 × 賞与 社会保険最適化シミュレーター</h1>
+    <p>月額報酬と事前確定届出給与（賞与）の配分で、社会保険・税金・手取りがどう変わるかを試算します（令和8年度・東京都 協会けんぽ料率）</p>
+  </div>
+</header>
+<main>
+<div class="grid">
+  <div>
+    <div class="card">
+      <h2>条件を入力</h2>
+      <label>年収（額面・円）
+        <input type="number" id="gross" value="12000000" step="100000" min="600000">
+      </label>
+      <label>月額役員報酬（円）
+        <input type="number" id="monthly" value="100000" step="10000" min="0">
+        <input type="range" id="monthlyRange" min="50000" max="1000000" step="5000" value="100000">
+      </label>
+      <div class="note">残り（年収 − 月額×12）が賞与になります。</div>
+      <label>賞与の支給回数（年）
+        <select id="bonusCount">
+          <option value="1" selected>1回</option>
+          <option value="2">2回</option>
+        </select>
+      </label>
+      <label>年齢
+        <select id="kaigo">
+          <option value="1" selected>40〜64歳（介護保険あり）</option>
+          <option value="0">40歳未満（介護保険なし）</option>
+        </select>
+      </label>
+      <label>その他の所得控除（配偶者・扶養・iDeCo等）
+        <input type="number" id="otherDed" value="0" step="10000" min="0">
+      </label>
+      <details>
+        <summary>詳細設定（料率・法人実効税率）</summary>
+        <label>健康保険料率（労使合計）<input type="number" id="rKenpo" value="9.85" step="0.01">％</label>
+        <label>介護保険料率<input type="number" id="rKaigo" value="1.62" step="0.01">％</label>
+        <label>子ども・子育て支援金率<input type="number" id="rShien" value="0.23" step="0.01">％</label>
+        <label>厚生年金保険料率<input type="number" id="rKosei" value="18.3" step="0.01">％</label>
+        <label>子ども・子育て拠出金率（会社のみ）<input type="number" id="rKyoshutsu" value="0.36" step="0.01">％</label>
+        <label>法人実効税率<input type="number" id="rHojin" value="33.6" step="0.1">％</label>
+      </details>
+      <button id="optBtn">▶ 手取り最大の配分を探す</button>
+      <div id="optResult"></div>
+    </div>
+    <div class="warn">
+      <h3>⚠ ご利用上の注意</h3>
+      <ul>
+        <li>賞与への配分は<b>事前確定届出給与の届出</b>（期限厳守・届出どおりの支給）が絶対条件です。</li>
+        <li>厚生年金の標準報酬が下がるため、<b>将来の年金・傷病手当金等の給付水準は低下</b>します。</li>
+        <li>給与所得控除・住民税等は簡易計算です（調整控除等は省略）。<b>あくまで概算</b>であり、実行の際は必ず税理士にご相談ください。</li>
+      </ul>
+    </div>
+  </div>
+  <div>
+    <div class="conclusion" id="conclusion"></div>
+    <div class="card">
+      <h2>手取り・負担の内訳比較</h2>
+      <div class="legend"><span class="lg-net">手取り</span><span class="lg-tax">税金</span><span class="lg-sha">社会保険（本人）</span></div>
+      <div class="bars" id="bars"></div>
+    </div>
+    <div class="card">
+      <h2>比較表</h2>
+      <table id="tbl"></table>
+    </div>
+  </div>
+</div>
+</main>
+<footer>山下税理士事務所 ｜ 令和8年度 東京都・協会けんぽ料率にもとづく概算シミュレーション</footer>
+<script>
+// ===== 標準報酬月額 等級表（令和8年度） =====
+const KENPO_GRADES = [[0,58000],[63000,68000],[73000,78000],[83000,88000],[93000,98000],[101000,104000],[107000,110000],[114000,118000],[122000,126000],[130000,134000],[138000,142000],[146000,150000],[155000,160000],[165000,170000],[175000,180000],[185000,190000],[195000,200000],[210000,220000],[230000,240000],[250000,260000],[270000,280000],[290000,300000],[310000,320000],[330000,340000],[350000,360000],[370000,380000],[395000,410000],[425000,440000],[455000,470000],[485000,500000],[515000,530000],[545000,560000],[575000,590000],[605000,620000],[635000,650000],[665000,680000],[695000,710000],[730000,750000],[770000,790000],[810000,830000],[855000,880000],[905000,930000],[955000,980000],[1005000,1030000],[1055000,1090000],[1115000,1150000],[1175000,1210000],[1235000,1270000],[1295000,1330000],[1355000,1390000]];
+const KOSEI_GRADES = KENPO_GRADES.filter(g=>g[1]>=88000 && g[1]<=650000).map((g,i)=> i===0 ? [0,88000] : g);
+const TAX_TABLE = [[0,0.05,0],[1950000,0.1,97500],[3300000,0.2,427500],[6950000,0.23,636000],[9000000,0.33,1536000],[18000000,0.4,2796000],[40000000,0.45,4796000]];
+const KENPO_BONUS_CAP_YEAR = 5730000, KOSEI_BONUS_CAP_ONE = 1500000;
+
+const yen = n => n.toLocaleString('ja-JP');
+const lookup = (tbl, v) => { let r = tbl[0][1]; for (const [lo, std] of tbl) { if (v >= lo) r = std; else break; } return r; };
+
+function salaryDeduction(g){ // 給与所得控除（令和7年改正・簡易）
+  if (g <= 1900000) return Math.min(g, 650000);
+  if (g <= 3600000) return g*0.3 + 80000;
+  if (g <= 6600000) return g*0.2 + 440000;
+  if (g <= 8500000) return g*0.1 + 1100000;
+  return 1950000;
+}
+function incomeTax(taxable){
+  if (taxable <= 0) return 0;
+  let row = TAX_TABLE[0];
+  for (const r of TAX_TABLE) { if (taxable >= r[0]) row = r; }
+  return Math.round((taxable*row[1] - row[2]) * 1.021);
+}
+
+function simulate(monthly, bonus, cnt, opts){
+  const {halfRateKenpoAll, halfRateKosei, rKyoshutsu, otherDed} = opts;
+  const stdK = lookup(KENPO_GRADES, monthly);
+  const stdN = lookup(KOSEI_GRADES, monthly);
+  const perBonusStd = cnt > 0 ? Math.floor(bonus/cnt/1000)*1000 : 0;
+  const bonusK = Math.min(perBonusStd*cnt, KENPO_BONUS_CAP_YEAR);
+  const bonusN = Math.min(perBonusStd, KOSEI_BONUS_CAP_ONE)*cnt;
+  const shaMonthly = stdK*halfRateKenpoAll*12 + stdN*halfRateKosei*12;
+  const shaBonus = bonusK*halfRateKenpoAll + bonusN*halfRateKosei;
+  const shaSelf = Math.round(shaMonthly + shaBonus);
+  const kyoshutsu = Math.round((stdN*12 + bonusN) * rKyoshutsu);
+  const shaCompany = shaSelf + kyoshutsu;
+  const gross = monthly*12 + bonus;
+  const ded = salaryDeduction(gross);
+  const taxableIT = Math.max(0, Math.floor((gross - ded - shaSelf - 580000 - otherDed)/1000)*1000);
+  const taxableRT = Math.max(0, Math.floor((gross - ded - shaSelf - 430000 - otherDed)/1000)*1000);
+  const it = incomeTax(taxableIT);
+  const rt = taxableRT > 0 ? Math.round(taxableRT*0.10) + 5000 : 0;
+  const tax = it + rt;
+  const net = gross - shaSelf - tax;
+  return {gross, shaSelf, shaCompany, kyoshutsu, tax, it, rt, net, publicTotal: shaSelf + tax + shaCompany};
+}
+
+function getOpts(){
+  const pct = id => Number(document.getElementById(id).value)/100;
+  const kaigoOn = document.getElementById('kaigo').value === '1';
+  return {
+    halfRateKenpoAll: (pct('rKenpo') + (kaigoOn ? pct('rKaigo') : 0) + pct('rShien'))/2,
+    halfRateKosei: pct('rKosei')/2,
+    rKyoshutsu: pct('rKyoshutsu'),
+    rHojin: pct('rHojin'),
+    otherDed: Number(document.getElementById('otherDed').value) || 0
+  };
+}
+
+function fmtDiff(v, goodWhenPositive=true){
+  if (v === 0) return '±0';
+  const s = (v>0?'＋':'▲') + yen(Math.abs(v));
+  const good = goodWhenPositive ? v>0 : v<0;
+  return `<span class="${good?'pos':'neg'}">${s}</span>`;
+}
+
+function render(){
+  const gross = Number(document.getElementById('gross').value)||0;
+  let monthly = Number(document.getElementById('monthly').value)||0;
+  if (monthly*12 > gross) { monthly = Math.floor(gross/12/1000)*1000; document.getElementById('monthly').value = monthly; }
+  document.getElementById('monthlyRange').max = Math.max(50000, Math.floor(gross/12));
+  document.getElementById('monthlyRange').value = monthly;
+  const cnt = Number(document.getElementById('bonusCount').value);
+  const bonus = gross - monthly*12;
+  const opts = getOpts();
+
+  const base = simulate(Math.round(gross/12), 0, 0, opts);        // 全額月給
+  const plan = simulate(monthly, bonus, bonus>0?cnt:0, opts);      // 入力配分
+
+  const dNet = plan.net - base.net;
+  const dShaCo = base.shaCompany - plan.shaCompany;
+  const dPub = (base.publicTotal) - (plan.publicTotal);
+  const hojinUp = Math.round(dShaCo * opts.rHojin);
+  const realMerit = dNet + dShaCo - hojinUp;
+
+  document.getElementById('conclusion').innerHTML = `
+    <h2>■ 結論（全額月給払いとの比較）</h2>
+    <div class="big">実質トータルメリット：${realMerit===0?'±0円':(realMerit>0?'＋':'▲')+yen(Math.abs(realMerit))+'円'}／年</div>
+    <ul>
+      <li>役員個人の手取り：<b>${dNet>=0?'＋':'▲'}${yen(Math.abs(dNet))}円</b>（${(plan.net/plan.gross*100).toFixed(1)}%）</li>
+      <li>会社の社保負担減：<b>${dShaCo>=0?'＋':'▲'}${yen(Math.abs(dShaCo))}円</b>／公的負担トータル：<b>${dPub>=0?'▲':'＋'}${yen(Math.abs(dPub))}円</b></li>
+      <li>法人税等の増加（損金減×実効税率）：▲${yen(hojinUp)}円 を差引済み</li>
+    </ul>`;
+
+  // 積み上げバー
+  const mk = (r, label) => {
+    const h = v => Math.max(1, v/r.gross*150);
+    return `<div class="barcol">
+      <div class="stack">
+        <div class="seg-net" style="height:${h(r.net)}px"></div>
+        <div class="seg-tax" style="height:${h(r.tax)}px"></div>
+        <div class="seg-sha" style="height:${h(r.shaSelf)}px"></div>
+      </div>
+      <div class="barlabel">${label}<br>手取り ${yen(r.net)}円</div>
+    </div>`;
+  };
+  document.getElementById('bars').innerHTML = mk(base,'① 全額月給') + mk(plan,'② 月給＋賞与');
+
+  const row = (label, a, b, diff, cls='') =>
+    `<tr class="${cls}"><td>${label}</td><td>${a}</td><td>${b}</td><td>${diff}</td></tr>`;
+  document.getElementById('tbl').innerHTML = `
+    <thead><tr><th>項目</th><th>① 全額月給</th><th>② 月給＋賞与</th><th>差（②−①）</th></tr></thead>
+    <tbody>
+      ${row('月額報酬', yen(Math.round(gross/12)), yen(monthly), '')}
+      ${row('年間賞与', '0', yen(bonus), '')}
+      ${row('本人：社会保険料', yen(base.shaSelf), yen(plan.shaSelf), fmtDiff(plan.shaSelf-base.shaSelf,false))}
+      ${row('本人：税金（所得税＋住民税）', yen(base.tax), yen(plan.tax), fmtDiff(plan.tax-base.tax,false))}
+      ${row('本人：手取り', yen(base.net), yen(plan.net), fmtDiff(dNet), 'hl')}
+      ${row('会社：社保負担（折半＋拠出金）', yen(base.shaCompany), yen(plan.shaCompany), fmtDiff(plan.shaCompany-base.shaCompany,false))}
+      ${row('公的負担トータル（本人＋会社）', yen(base.publicTotal), yen(plan.publicTotal), fmtDiff(plan.publicTotal-base.publicTotal,false), 'tot')}
+      ${row('（参考）法人税等の増加', '—', yen(hojinUp), fmtDiff(-hojinUp,true))}
+      ${row('実質トータルメリット', '—', '', fmtDiff(realMerit), 'hl')}
+    </tbody>`;
+}
+
+document.getElementById('optBtn').addEventListener('click', () => {
+  const gross = Number(document.getElementById('gross').value)||0;
+  const cnt = Number(document.getElementById('bonusCount').value);
+  const opts = getOpts();
+  const base = simulate(Math.round(gross/12), 0, 0, opts);
+  let best = null;
+  for (let m = 50000; m <= gross/12; m += 5000) {
+    const bonus = gross - m*12;
+    const r = simulate(m, bonus, bonus>0?cnt:0, opts);
+    const dShaCo = base.shaCompany - r.shaCompany;
+    const merit = (r.net - base.net) + dShaCo - Math.round(dShaCo*opts.rHojin);
+    if (!best || merit > best.merit) best = {m, bonus, merit};
+  }
+  if (best) {
+    document.getElementById('monthly').value = best.m;
+    render();
+    const el = document.getElementById('optResult');
+    el.style.display = 'block';
+    el.innerHTML = `最適配分：<b>月額 ${yen(best.m)}円 ＋ 賞与 ${yen(best.bonus)}円</b><br>実質トータルメリット 約 <b>${yen(best.merit)}円／年</b>（5,000円刻みで探索）`;
+  }
+});
+
+['gross','monthly','bonusCount','kaigo','otherDed','rKenpo','rKaigo','rShien','rKosei','rKyoshutsu','rHojin']
+  .forEach(id => document.getElementById(id).addEventListener('input', render));
+document.getElementById('monthlyRange').addEventListener('input', e => {
+  document.getElementById('monthly').value = e.target.value; render();
+});
+render();
+</script>
+</body>
+</html>
