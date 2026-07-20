@@ -22,8 +22,8 @@
   .card{background:#fff; border-radius:10px; box-shadow:0 1px 4px rgba(0,0,0,.08); padding:20px; margin-bottom:20px;}
   .card h2{font-size:1rem; color:var(--navy); border-left:4px solid var(--navy); padding-left:10px; margin-bottom:14px;}
   label{display:block; font-size:.82rem; color:var(--sub); margin-top:12px;}
-  input[type=number], select{width:100%; padding:9px 10px; font-size:1rem; border:1.5px solid #ccd3e0; border-radius:6px; background:var(--yellow); margin-top:3px;}
-  input[type=number]:focus{outline:2px solid var(--navy-l);}
+  input[type=number], input[type=text], select{width:100%; padding:9px 10px; font-size:1rem; border:1.5px solid #ccd3e0; border-radius:6px; background:var(--yellow); margin-top:3px;}
+  input[type=number]:focus, input[type=text]:focus{outline:2px solid var(--navy-l);}
   input[type=range]{width:100%; margin-top:8px; accent-color:var(--navy);}
   .note{font-size:.72rem; color:var(--sub); margin-top:4px;}
   .conclusion{background:var(--green-l); border-radius:10px; padding:18px 20px; margin-bottom:20px; border:1px solid #bcd6b0;}
@@ -75,10 +75,10 @@
     <div class="card">
       <h2>条件を入力</h2>
       <label>年収（額面・円）
-        <input type="number" id="gross" value="12000000" step="100000" min="600000">
+        <input type="text" inputmode="numeric" id="gross" value="12,000,000">
       </label>
       <label>月額役員報酬（円）
-        <input type="number" id="monthly" value="100000" step="10000" min="0">
+        <input type="text" inputmode="numeric" id="monthly" value="100,000">
         <input type="range" id="monthlyRange" min="50000" max="1000000" step="5000" value="100000">
       </label>
       <div class="note">残り（年収 − 月額×12）が賞与になります。</div>
@@ -95,7 +95,7 @@
         </select>
       </label>
       <label>その他の所得控除（配偶者・扶養・iDeCo等）
-        <input type="number" id="otherDed" value="0" step="10000" min="0">
+        <input type="text" inputmode="numeric" id="otherDed" value="0">
       </label>
       <details>
         <summary>詳細設定（料率・法人実効税率）</summary>
@@ -141,6 +141,19 @@ const TAX_TABLE = [[0,0.05,0],[1950000,0.1,97500],[3300000,0.2,427500],[6950000,
 const KENPO_BONUS_CAP_YEAR = 5730000, KOSEI_BONUS_CAP_ONE = 1500000;
 
 const yen = n => n.toLocaleString('ja-JP');
+const numVal = id => Number(String(document.getElementById(id).value).replace(/[,，]/g,''))||0;
+function attachComma(id){
+  const el = document.getElementById(id);
+  el.addEventListener('input', () => {
+    const digitsBefore = (el.value.slice(0, el.selectionStart).match(/\d/g)||[]).length;
+    const raw = el.value.replace(/[^\d]/g,'');
+    el.value = raw ? Number(raw).toLocaleString('ja-JP') : '';
+    let pos = 0, cnt = 0;
+    while (pos < el.value.length && cnt < digitsBefore) { if (/\d/.test(el.value[pos])) cnt++; pos++; }
+    el.setSelectionRange(pos, pos);
+  });
+}
+['gross','monthly','otherDed'].forEach(attachComma);
 const lookup = (tbl, v) => { let r = tbl[0][1]; for (const [lo, std] of tbl) { if (v >= lo) r = std; else break; } return r; };
 
 function salaryDeduction(g){ // 給与所得控除（令和7年改正・簡易）
@@ -188,7 +201,7 @@ function getOpts(){
     halfRateKosei: pct('rKosei')/2,
     rKyoshutsu: pct('rKyoshutsu'),
     rHojin: pct('rHojin'),
-    otherDed: Number(document.getElementById('otherDed').value) || 0
+    otherDed: numVal('otherDed')
   };
 }
 
@@ -200,9 +213,9 @@ function fmtDiff(v, goodWhenPositive=true){
 }
 
 function render(){
-  const gross = Number(document.getElementById('gross').value)||0;
-  let monthly = Number(document.getElementById('monthly').value)||0;
-  if (monthly*12 > gross) { monthly = Math.floor(gross/12/1000)*1000; document.getElementById('monthly').value = monthly; }
+  const gross = numVal('gross');
+  let monthly = numVal('monthly');
+  if (monthly*12 > gross) { monthly = Math.floor(gross/12/1000)*1000; document.getElementById('monthly').value = yen(monthly); }
   document.getElementById('monthlyRange').max = Math.max(50000, Math.floor(gross/12));
   document.getElementById('monthlyRange').value = monthly;
   const cnt = Number(document.getElementById('bonusCount').value);
@@ -259,7 +272,7 @@ function render(){
 }
 
 document.getElementById('optBtn').addEventListener('click', () => {
-  const gross = Number(document.getElementById('gross').value)||0;
+  const gross = numVal('gross');
   const cnt = Number(document.getElementById('bonusCount').value);
   const opts = getOpts();
   const base = simulate(Math.round(gross/12), 0, 0, opts);
@@ -272,7 +285,7 @@ document.getElementById('optBtn').addEventListener('click', () => {
     if (!best || merit > best.merit) best = {m, bonus, merit};
   }
   if (best) {
-    document.getElementById('monthly').value = best.m;
+    document.getElementById('monthly').value = yen(best.m);
     render();
     const el = document.getElementById('optResult');
     el.style.display = 'block';
@@ -283,7 +296,7 @@ document.getElementById('optBtn').addEventListener('click', () => {
 ['gross','monthly','bonusCount','kaigo','otherDed','rKenpo','rKaigo','rShien','rKosei','rKyoshutsu','rHojin']
   .forEach(id => document.getElementById(id).addEventListener('input', render));
 document.getElementById('monthlyRange').addEventListener('input', e => {
-  document.getElementById('monthly').value = e.target.value; render();
+  document.getElementById('monthly').value = yen(Number(e.target.value)); render();
 });
 render();
 </script>
