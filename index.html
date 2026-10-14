@@ -296,6 +296,7 @@ function render(){
     <tbody>
       ${row('月額報酬', yen(Math.round(gross/12)), yen(monthly), '')}
       ${row('年間賞与', '0', yen(bonus), '')}
+      ${row('年収合計（額面）', yen(base.gross), yen(plan.gross), (d => d===0 ? '±0' : (d>0?'＋':'▲')+yen(Math.abs(d)))(plan.gross-base.gross), 'tot')}
       ${row('本人：社会保険料', yen(base.shaSelf), yen(plan.shaSelf), fmtDiff(plan.shaSelf-base.shaSelf,false))}
       ${row('本人：税金（所得税＋住民税）', yen(base.tax), yen(plan.tax), fmtDiff(plan.tax-base.tax,false))}
       ${row('本人：手取り', yen(base.net), yen(plan.net), fmtDiff(dNet), 'hl')}
