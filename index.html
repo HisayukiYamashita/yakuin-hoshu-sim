@@ -18,7 +18,12 @@
   header p{font-size:.8rem; opacity:.85; margin-top:6px;}
   main{max-width:1080px; margin:0 auto; padding:20px 16px 60px;}
   .grid{display:grid; grid-template-columns:340px 1fr; gap:20px;}
-  @media(max-width:860px){.grid{grid-template-columns:1fr;}}
+  .col-input{grid-column:1; grid-row:1;}
+  .col-result{grid-column:2; grid-row:1;}
+  @media(max-width:860px){.grid{grid-template-columns:1fr;} .col-result{grid-column:1; grid-row:2;}}
+  .print-only{display:none;}
+  .premise th{background:var(--lblue); color:var(--navy); text-align:left; font-weight:600; width:45%;}
+  .premise td{text-align:right;}
   .card{background:#fff; border-radius:10px; box-shadow:0 1px 4px rgba(0,0,0,.08); padding:20px; margin-bottom:20px;}
   .card h2{font-size:1rem; color:var(--navy); border-left:4px solid var(--navy); padding-left:10px; margin-bottom:14px;}
   label{display:block; font-size:.82rem; color:var(--sub); margin-top:12px;}
@@ -62,15 +67,23 @@
   .headrow{display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;}
   #printBtn{width:auto; margin:0; background:#fff; color:var(--navy); font-weight:bold; padding:8px 14px; border-radius:6px; flex-shrink:0;}
   #printBtn:hover{background:var(--lblue);}
+  @page{size:A4 portrait; margin:12mm;}
   @media print{
     *{-webkit-print-color-adjust:exact; print-color-adjust:exact;}
     body{background:#fff;}
     header{padding:12px 16px;}
     main{padding:10px 0;}
-    .grid{grid-template-columns:1fr; gap:8px;}
+    /* 1ページ目＝結論・比較、2ページ目＝前提条件 */
+    .grid{display:block;}
+    .col-input{break-before:page; page-break-before:always;}
+    .col-input .input-card{display:none;}
+    .print-only{display:block;}
     #printBtn, #optBtn, #monthlyRange, details, .note{display:none;}
     .card, .conclusion, .warn{box-shadow:none; border:1px solid #d8dce4; break-inside:avoid; margin-bottom:8px; padding:12px 16px;}
-    .bars{height:150px;}
+    .bars{height:130px; margin:10px 8px 2px;}
+    .stack{height:110px;}
+    th, td{padding:6px 10px;}
+    .conclusion .big{font-size:1.5rem;}
     footer{padding:8px 0;}
   }
   #optResult{font-size:.85rem; margin-top:10px; background:var(--lblue); border-radius:6px; padding:10px 12px; display:none;}
@@ -88,8 +101,21 @@
 </header>
 <main>
 <div class="grid">
-  <div>
+  <div class="col-result">
+    <div class="conclusion" id="conclusion"></div>
     <div class="card">
+      <h2>手取り・負担の内訳比較</h2>
+      <div class="legend"><span class="lg-net">手取り</span><span class="lg-tax">税金</span><span class="lg-sha">社会保険（本人）</span></div>
+      <div class="bars" id="bars"></div>
+    </div>
+    <div class="card">
+      <h2>比較表</h2>
+      <table id="tbl"></table>
+    </div>
+  </div>
+
+  <div class="col-input">
+    <div class="card input-card">
       <h2>条件を入力</h2>
       <label>年収（額面・円）
         <input type="text" inputmode="numeric" id="gross" value="12,000,000">
@@ -126,6 +152,10 @@
       <button id="optBtn">▶ 手取り最大の配分を探す</button>
       <div id="optResult"></div>
     </div>
+    <div class="card print-only">
+      <h2>前提条件</h2>
+      <table class="premise" id="premise"></table>
+    </div>
     <div class="warn">
       <h3>⚠ ご利用上の注意</h3>
       <ul>
@@ -133,18 +163,6 @@
         <li>厚生年金の標準報酬が下がるため、<b>将来の年金・傷病手当金等の給付水準は低下</b>します。</li>
         <li>給与所得控除・住民税等は簡易計算です（調整控除等は省略）。<b>あくまで概算</b>であり、実行の際は必ず税理士にご相談ください。</li>
       </ul>
-    </div>
-  </div>
-  <div>
-    <div class="conclusion" id="conclusion"></div>
-    <div class="card">
-      <h2>手取り・負担の内訳比較</h2>
-      <div class="legend"><span class="lg-net">手取り</span><span class="lg-tax">税金</span><span class="lg-sha">社会保険（本人）</span></div>
-      <div class="bars" id="bars"></div>
-    </div>
-    <div class="card">
-      <h2>比較表</h2>
-      <table id="tbl"></table>
     </div>
   </div>
 </div>
@@ -259,12 +277,12 @@ function render(){
 
   // 積み上げバー
   const mk = (r, label) => {
-    const h = v => Math.max(1, v/r.gross*150);
+    const h = v => Math.max(0.5, v/r.gross*100);
     return `<div class="barcol">
       <div class="stack">
-        <div class="seg-net" style="height:${h(r.net)}px"></div>
-        <div class="seg-tax" style="height:${h(r.tax)}px"></div>
-        <div class="seg-sha" style="height:${h(r.shaSelf)}px"></div>
+        <div class="seg-net" style="height:${h(r.net)}%"></div>
+        <div class="seg-tax" style="height:${h(r.tax)}%"></div>
+        <div class="seg-sha" style="height:${h(r.shaSelf)}%"></div>
       </div>
       <div class="barlabel">${label}<br>手取り ${yen(r.net)}円</div>
     </div>`;
@@ -286,6 +304,28 @@ function render(){
       ${row('（参考）法人税等の増加', '—', yen(hojinUp), fmtDiff(-hojinUp,true))}
       ${row('実質トータルメリット', '—', '', fmtDiff(realMerit), 'hl')}
     </tbody>`;
+
+  // 印刷2ページ目：前提条件
+  const v = id => document.getElementById(id).value;
+  const selText = id => { const el = document.getElementById(id); return el.options[el.selectedIndex].text; };
+  const prow = (k, val) => `<tr><th>${k}</th><td>${val}</td></tr>`;
+  const realCnt = bonus>0 ? cnt : 0;
+  document.getElementById('premise').innerHTML = `<tbody>
+    ${prow('年収（額面）', yen(gross)+'円')}
+    ${prow('② 月額役員報酬', yen(monthly)+'円 × 12か月')}
+    ${prow('② 賞与（事前確定届出給与）', realCnt ? `年 ${yen(bonus)}円（${realCnt}回・1回 ${yen(Math.round(bonus/realCnt))}円）` : 'なし')}
+    ${prow('① 比較対象（全額月給）', '月額 '+yen(Math.round(gross/12))+'円 × 12か月')}
+    ${prow('年齢区分', selText('kaigo'))}
+    ${prow('その他の所得控除', yen(numVal('otherDed'))+'円')}
+    ${prow('健康保険料率（労使合計）', v('rKenpo')+'％')}
+    ${prow('介護保険料率', v('rKaigo')+'％')}
+    ${prow('子ども・子育て支援金率', v('rShien')+'％')}
+    ${prow('厚生年金保険料率', v('rKosei')+'％')}
+    ${prow('子ども・子育て拠出金率（会社のみ）', v('rKyoshutsu')+'％')}
+    ${prow('法人実効税率', v('rHojin')+'％')}
+    ${prow('料率の基準', '令和8年度・東京都 協会けんぽ')}
+    ${prow('試算日', new Date().toLocaleDateString('ja-JP'))}
+  </tbody>`;
 }
 
 document.getElementById('optBtn').addEventListener('click', () => {
