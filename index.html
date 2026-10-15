@@ -5,7 +5,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>役員報酬×賞与 社会保険最適化シミュレーター</title>
-<meta name="description" content="月額報酬と事前確定届出給与（賞与）の配分による社会保険料・税金・手取りの変化を試算できるシミュレーター。令和8年度・東京都協会けんぽ料率対応。">
+<meta name="description" content="月額報酬と事前確定届出給与（賞与）の配分による社会保険料・税金・手取りの変化を試算できるシミュレーター。令和8年度・協会けんぽ福岡支部の料率対応。">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
@@ -84,6 +84,7 @@
   #printBtn:hover{background:var(--lime);}
   @page{size:A4 portrait; margin:12mm;}
   @media print{
+    #kaikeiImport{display:none !important;}
     *{-webkit-print-color-adjust:exact; print-color-adjust:exact;}
     header{padding:0 0 10px; border-top-width:4px;}
     header h1{font-size:1.5rem;}
@@ -113,7 +114,7 @@
     </div>
     <h1>賞与に寄せると、<br>手取りはいくら増える？</h1>
     <p class="sub">役員報酬×賞与 社会保険最適化シミュレーター</p>
-    <p class="lead">月額報酬と事前確定届出給与（賞与）の配分で、社会保険・税金・手取りがどう変わるかを試算します（令和8年度・東京都 協会けんぽ料率）</p>
+    <p class="lead">月額報酬と事前確定届出給与（賞与）の配分で、社会保険・税金・手取りがどう変わるかを試算します（令和8年度・協会けんぽ 福岡支部の料率）</p>
   </div>
 </header>
 <main>
@@ -132,6 +133,10 @@
   </div>
 
   <div class="col-input">
+    <details class="ki-wrap" id="kaikeiImport">
+      <summary>会計データから入れる<small>freee・弥生・マネーフォワード</small></summary>
+      <div id="kaikeiImportBox">取り込み部品を読み込んでいます…</div>
+    </details>
     <div class="card input-card">
       <h2>条件を入力</h2>
       <label>年収（額面・円）
@@ -159,7 +164,7 @@
       </label>
       <details>
         <summary>詳細設定（料率・法人実効税率）</summary>
-        <label>健康保険料率（労使合計）<input type="number" id="rKenpo" value="9.85" step="0.01">％</label>
+        <label>健康保険料率（労使合計）<input type="number" id="rKenpo" value="10.11" step="0.01">％</label>
         <label>介護保険料率<input type="number" id="rKaigo" value="1.62" step="0.01">％</label>
         <label>子ども・子育て支援金率<input type="number" id="rShien" value="0.23" step="0.01">％</label>
         <label>厚生年金保険料率<input type="number" id="rKosei" value="18.3" step="0.01">％</label>
@@ -184,7 +189,7 @@
   </div>
 </div>
 </main>
-<footer>山下税理士事務所 ｜ okanefuyasu.net ｜ 令和8年度 東京都・協会けんぽ料率にもとづく概算シミュレーション</footer>
+<footer>山下税理士事務所 ｜ okanefuyasu.net ｜ 令和8年度 協会けんぽ 福岡支部の料率にもとづく概算シミュレーション</footer>
 <script>
 // ===== 標準報酬月額 等級表（令和8年度） =====
 const KENPO_GRADES = [[0,58000],[63000,68000],[73000,78000],[83000,88000],[93000,98000],[101000,104000],[107000,110000],[114000,118000],[122000,126000],[130000,134000],[138000,142000],[146000,150000],[155000,160000],[165000,170000],[175000,180000],[185000,190000],[195000,200000],[210000,220000],[230000,240000],[250000,260000],[270000,280000],[290000,300000],[310000,320000],[330000,340000],[350000,360000],[370000,380000],[395000,410000],[425000,440000],[455000,470000],[485000,500000],[515000,530000],[545000,560000],[575000,590000],[605000,620000],[635000,650000],[665000,680000],[695000,710000],[730000,750000],[770000,790000],[810000,830000],[855000,880000],[905000,930000],[955000,980000],[1005000,1030000],[1055000,1090000],[1115000,1150000],[1175000,1210000],[1235000,1270000],[1295000,1330000],[1355000,1390000]];
@@ -344,7 +349,7 @@ function render(){
     ${prow('厚生年金保険料率', v('rKosei')+'％')}
     ${prow('子ども・子育て拠出金率（会社のみ）', v('rKyoshutsu')+'％')}
     ${prow('法人実効税率', v('rHojin')+'％')}
-    ${prow('料率の基準', '令和8年度・東京都 協会けんぽ')}
+    ${prow('料率の基準', '令和8年度・協会けんぽ 福岡支部')}
     ${prow('試算日', new Date().toLocaleDateString('ja-JP'))}
   </tbody>`;
 }
@@ -377,6 +382,26 @@ document.getElementById('monthlyRange').addEventListener('input', e => {
   document.getElementById('monthly').value = yen(Number(e.target.value)); render();
 });
 render();
+</script>
+<script type="module" id="kaikei-import">
+// 会計データの取り込み（共通部品 okanefuyasu.net/shared/kaikei-import.js）。
+// 計算ロジックには触らない。取り込んだ数字を入力欄に入れて、ページの再計算を動かすだけ。
+const box = document.getElementById('kaikeiImportBox');
+try {
+  const K = await import('https://okanefuyasu.net/shared/kaikei-import.js');
+  const kikan = (d) => (d.elapsed && d.elapsed < (d.months || 12) ? `（${d.elapsed}か月分を12か月に換算）` : '');
+  K.mountImporter(box, {
+    fields: ['yakuin_hoshu'],
+    onData(d) {
+      const v = K.annualize(d.values.yakuin_hoshu, d.elapsed, d.months);
+      if (!v) throw new Error('役員報酬が見つかりません');
+      K.setInput('gross', v);
+      return `役員報酬 ${K.fmtYen(v)}${kikan(d)}を「年収」に入れました。役員が複数いるときは、この方の分に直してください`;
+    },
+  });
+} catch (e) {
+  box.textContent = '取り込み部品を読み込めませんでした。インターネットにつながっているか確認してください（手入力はそのまま使えます）。';
+}
 </script>
 </body>
 </html>
