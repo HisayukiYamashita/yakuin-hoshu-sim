@@ -6,98 +6,114 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>役員報酬×賞与 社会保険最適化シミュレーター</title>
 <meta name="description" content="月額報酬と事前確定届出給与（賞与）の配分による社会保険料・税金・手取りの変化を試算できるシミュレーター。令和8年度・東京都協会けんぽ料率対応。">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
 <style>
+  /* デザイン：白×ライムの経済メディア風（2026-10-15）。印刷を考えて塗りは最小限、罫線で区切る */
   :root{
-    --navy:#1f3864; --navy-l:#2c4a7c; --lblue:#d9e2f3; --green:#38761d; --green-l:#d9ead3;
-    --yellow:#fff2cc; --gray:#f3f3f3; --text:#222; --sub:#666; --red:#b45309;
+    --ink:#111; --sub:#5f6368; --line:#e3e3e3; --lime:#d4f04a; --lime-d:#8fae00;
+    --pos:#157f3b; --neg:#c2410c; --bg:#fff;
   }
   *{box-sizing:border-box; margin:0; padding:0;}
-  body{font-family:"Hiragino Kaku Gothic ProN","Hiragino Sans",Meiryo,sans-serif; color:var(--text); background:#f7f8fa; line-height:1.6;}
-  header{background:var(--navy); color:#fff; padding:28px 16px 22px;}
+  body{font-family:"Inter","Noto Sans JP","Hiragino Sans",sans-serif; color:var(--ink); background:var(--bg); line-height:1.7; -webkit-font-smoothing:antialiased;}
+  .num, td, .big{font-variant-numeric:tabular-nums;}
+  header{border-top:6px solid var(--ink); padding:28px 20px 22px; border-bottom:1px solid var(--ink);}
   header .wrap{max-width:1080px; margin:0 auto;}
-  header h1{font-size:1.35rem; letter-spacing:.02em;}
-  header p{font-size:.8rem; opacity:.85; margin-top:6px;}
-  main{max-width:1080px; margin:0 auto; padding:20px 16px 60px;}
-  .grid{display:grid; grid-template-columns:340px 1fr; gap:20px;}
+  .tag{display:inline-block; background:var(--lime); color:var(--ink); font-size:.75rem; font-weight:700; padding:2px 10px; letter-spacing:.06em;}
+  header h1{font-size:clamp(1.6rem,4vw,2.4rem); font-weight:900; letter-spacing:-.01em; line-height:1.25; margin-top:10px;}
+  header .sub{font-size:.95rem; font-weight:700; margin-top:6px;}
+  header p.lead{font-size:.82rem; color:var(--sub); margin-top:6px;}
+  main{max-width:1080px; margin:0 auto; padding:28px 20px 60px;}
+  .grid{display:grid; grid-template-columns:320px 1fr; gap:40px;}
   .col-input{grid-column:1; grid-row:1;}
   .col-result{grid-column:2; grid-row:1;}
-  @media(max-width:860px){.grid{grid-template-columns:1fr;} .col-result{grid-column:1; grid-row:2;}}
+  @media(max-width:860px){.grid{grid-template-columns:1fr; gap:24px;} .col-result{grid-column:1; grid-row:2;}}
   .print-only{display:none;}
-  .premise th{background:var(--lblue); color:var(--navy); text-align:left; font-weight:600; width:45%;}
+  .premise th{text-align:left; font-weight:500; color:var(--sub); width:45%;}
   .premise td{text-align:right;}
-  .card{background:#fff; border-radius:10px; box-shadow:0 1px 4px rgba(0,0,0,.08); padding:20px; margin-bottom:20px;}
-  .card h2{font-size:1rem; color:var(--navy); border-left:4px solid var(--navy); padding-left:10px; margin-bottom:14px;}
-  label{display:block; font-size:.82rem; color:var(--sub); margin-top:12px;}
-  input[type=number], input[type=text], select{width:100%; padding:9px 10px; font-size:1rem; border:1.5px solid #ccd3e0; border-radius:6px; background:var(--yellow); margin-top:3px;}
-  input[type=number]:focus, input[type=text]:focus{outline:2px solid var(--navy-l);}
-  input[type=range]{width:100%; margin-top:8px; accent-color:var(--navy);}
-  .note{font-size:.72rem; color:var(--sub); margin-top:4px;}
-  .conclusion{background:var(--green-l); border-radius:10px; padding:18px 20px; margin-bottom:20px; border:1px solid #bcd6b0;}
-  .conclusion h2{color:var(--green); font-size:1.05rem; margin-bottom:8px; border:none; padding:0;}
-  .conclusion .big{font-size:1.7rem; font-weight:bold; color:var(--green);}
-  .conclusion ul{list-style:none; margin-top:8px;}
-  .conclusion li{font-size:.92rem; padding:2px 0;}
-  .conclusion li b{color:var(--green);}
+  .card{padding:0 0 22px; margin-bottom:26px; border-bottom:1px solid var(--line);}
+  .card h2, .conclusion h2{font-size:.78rem; font-weight:700; letter-spacing:.12em; color:var(--ink); border-top:2px solid var(--ink); padding-top:8px; margin-bottom:14px;}
+  label{display:block; font-size:.8rem; color:var(--sub); margin-top:14px;}
+  input[type=number], input[type=text], select{width:100%; padding:9px 2px; font-size:1.05rem; font-weight:600; font-family:inherit; color:var(--ink); border:none; border-bottom:1.5px solid #bdbdbd; border-radius:0; background:transparent; margin-top:2px;}
+  input[type=number]:focus, input[type=text]:focus, select:focus{outline:none; border-bottom-color:var(--ink);}
+  input[type=range]{width:100%; margin-top:10px; accent-color:var(--ink);}
+  .note{font-size:.72rem; color:var(--sub); margin-top:6px;}
+  .conclusion{margin-bottom:30px;}
+  .conclusion .label{font-size:.85rem; color:var(--sub);}
+  .conclusion .big{font-size:clamp(2.4rem,6vw,3.6rem); font-weight:800; letter-spacing:-.03em; line-height:1.15; margin:2px 0 6px;}
+  .conclusion .big .mark{background:linear-gradient(transparent 62%, var(--lime) 62%);}
+  .conclusion .big small{font-size:.38em; font-weight:700; margin-left:4px;}
+  .stats{display:grid; grid-template-columns:repeat(3,1fr); border-top:1px solid var(--line); margin-top:14px;}
+  .stats div{padding:12px 12px 4px 0;}
+  .stats div + div{border-left:1px solid var(--line); padding-left:14px;}
+  .stats span{display:block; font-size:.74rem; color:var(--sub);}
+  .stats b{display:block; font-size:1.25rem; font-weight:700; letter-spacing:-.01em;}
+  .conclusion .fine{font-size:.74rem; color:var(--sub); margin-top:8px;}
+  @media(max-width:560px){.stats{grid-template-columns:1fr;} .stats div + div{border-left:none; border-top:1px solid var(--line); padding-left:0;}}
   table{width:100%; border-collapse:collapse; font-size:.88rem;}
-  th,td{padding:8px 10px; text-align:right; border-bottom:1px solid #e7eaf0; white-space:nowrap;}
-  th:first-child, td:first-child{text-align:left; white-space:normal;}
-  thead th{background:var(--navy); color:#fff; text-align:center; font-weight:600;}
-  tr.sec td{background:var(--lblue); color:var(--navy); font-weight:bold;}
-  tr.hl td{background:var(--green-l); color:var(--green); font-weight:bold;}
-  tr.tot td{background:var(--gray); font-weight:bold;}
-  .pos{color:var(--green); font-weight:bold;}
-  .neg{color:var(--red); font-weight:bold;}
-  .bars{display:flex; gap:26px; align-items:flex-end; height:190px; margin:18px 8px 4px; justify-content:center;}
+  th,td{padding:9px 8px; text-align:right; border-bottom:1px solid var(--line); white-space:nowrap;}
+  th:first-child, td:first-child{text-align:left; white-space:normal; padding-left:0;}
+  thead th{font-size:.75rem; color:var(--sub); font-weight:500; border-bottom:1.5px solid var(--ink); text-align:right;}
+  thead th:first-child{text-align:left;}
+  tr.hl td{font-weight:700; border-top:1.5px solid var(--ink);}
+  tr.hl td:first-child{box-shadow:inset 4px 0 0 var(--lime); padding-left:10px;}
+  tr.tot td{font-weight:700;}
+  .pos{color:var(--pos); font-weight:700;}
+  .neg{color:var(--neg); font-weight:700;}
+  .bars{display:flex; gap:36px; align-items:flex-end; height:200px; margin:18px 8px 4px; justify-content:center;}
   .barcol{display:flex; flex-direction:column; align-items:center; width:120px;}
-  .stack{display:flex; flex-direction:column-reverse; width:100%; height:150px; border-radius:6px 6px 0 0; overflow:hidden;}
-  .seg-net{background:var(--green);}
-  .seg-tax{background:#e8b64c;}
-  .seg-sha{background:#c0504d;}
-  .barlabel{font-size:.78rem; color:var(--sub); margin-top:6px; text-align:center;}
-  .legend{display:flex; gap:16px; justify-content:center; font-size:.75rem; color:var(--sub); margin-bottom:6px;}
-  .legend span::before{content:"■ "; }
-  .lg-net::before{color:var(--green);} .lg-tax::before{color:#e8b64c;} .lg-sha::before{color:#c0504d;}
-  button{background:var(--navy); color:#fff; border:none; border-radius:6px; padding:10px 16px; font-size:.9rem; cursor:pointer; margin-top:14px; width:100%;}
-  button:hover{background:var(--navy-l);}
-  details{margin-top:14px; font-size:.85rem;}
-  summary{cursor:pointer; color:var(--navy); font-weight:600;}
-  .warn{background:#fff8e6; border:1px solid #eeddaa; border-radius:10px; padding:16px 18px; font-size:.8rem; color:#664d1a;}
-  .warn h3{font-size:.9rem; margin-bottom:6px;}
+  .stack{display:flex; flex-direction:column-reverse; width:100%; height:155px; border:1px solid var(--ink);}
+  .seg-net{background:var(--lime);}
+  .seg-tax{background:#fff; background-image:repeating-linear-gradient(45deg,#9a9a9a 0 1px,transparent 1px 6px);}
+  .seg-sha{background:var(--ink);}
+  .barlabel{font-size:.78rem; color:var(--sub); margin-top:8px; text-align:center;}
+  .barlabel b{color:var(--ink);}
+  .legend{display:flex; gap:18px; justify-content:center; font-size:.75rem; color:var(--sub); margin-bottom:6px;}
+  .legend span::before{content:""; display:inline-block; width:10px; height:10px; margin-right:5px; vertical-align:-1px; border:1px solid var(--ink);}
+  .lg-net::before{background:var(--lime);} .lg-tax::before{background-image:repeating-linear-gradient(45deg,#9a9a9a 0 1px,transparent 1px 4px);} .lg-sha::before{background:var(--ink);}
+  button{background:var(--ink); color:#fff; border:none; border-radius:4px; padding:12px 16px; font-size:.92rem; font-weight:700; font-family:inherit; cursor:pointer; margin-top:18px; width:100%;}
+  button:hover{background:#333;}
+  details{margin-top:16px; font-size:.85rem;}
+  summary{cursor:pointer; font-weight:700;}
+  .warn{border:1px solid var(--ink); padding:16px 18px; font-size:.8rem; line-height:1.8;}
+  .warn h3{font-size:.85rem; margin-bottom:6px;}
   .warn li{margin-left:1.2em; margin-top:3px;}
-  footer{text-align:center; font-size:.75rem; color:var(--sub); padding:20px 0 40px;}
-  .headrow{display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap;}
-  #printBtn{width:auto; margin:0; background:#fff; color:var(--navy); font-weight:bold; padding:8px 14px; border-radius:6px; flex-shrink:0;}
-  #printBtn:hover{background:var(--lblue);}
+  footer{max-width:1080px; margin:0 auto; border-top:1px solid var(--ink); font-size:.75rem; color:var(--sub); padding:14px 20px 40px;}
+  .headrow{display:flex; justify-content:space-between; align-items:flex-start; gap:12px; flex-wrap:wrap;}
+  #printBtn{width:auto; margin:0; background:#fff; color:var(--ink); border:1.5px solid var(--ink); font-weight:700; padding:7px 14px; flex-shrink:0;}
+  #printBtn:hover{background:var(--lime);}
   @page{size:A4 portrait; margin:12mm;}
   @media print{
     *{-webkit-print-color-adjust:exact; print-color-adjust:exact;}
-    body{background:#fff;}
-    header{padding:12px 16px;}
-    main{padding:10px 0;}
+    header{padding:0 0 10px; border-top-width:4px;}
+    header h1{font-size:1.5rem;}
+    main{padding:12px 0;}
     /* 1ページ目＝結論・比較、2ページ目＝前提条件 */
     .grid{display:block;}
     .col-input{break-before:page; page-break-before:always;}
     .col-input .input-card{display:none;}
     .print-only{display:block;}
-    #printBtn, #optBtn, #monthlyRange, details, .note{display:none;}
-    .card, .conclusion, .warn{box-shadow:none; border:1px solid #d8dce4; break-inside:avoid; margin-bottom:8px; padding:12px 16px;}
+    #printBtn, #optBtn, #monthlyRange, details, .note, #optResult{display:none !important;}
+    .card, .conclusion, .warn{break-inside:avoid; margin-bottom:12px;}
+    .conclusion .big{font-size:2.2rem;}
     .bars{height:130px; margin:10px 8px 2px;}
     .stack{height:110px;}
-    th, td{padding:6px 10px;}
-    .conclusion .big{font-size:1.5rem;}
+    th, td{padding:5px 8px;}
     footer{padding:8px 0;}
   }
-  #optResult{font-size:.85rem; margin-top:10px; background:var(--lblue); border-radius:6px; padding:10px 12px; display:none;}
+  #optResult{font-size:.85rem; margin-top:12px; border-left:4px solid var(--lime); padding:4px 0 4px 12px; display:none;}
 </style>
 </head>
 <body>
 <header>
   <div class="wrap">
     <div class="headrow">
-      <h1>役員報酬 × 賞与 社会保険最適化シミュレーター</h1>
-      <button id="printBtn" onclick="window.print()">🖨 印刷・PDF保存</button>
+      <span class="tag">役員報酬 × 賞与</span>
+      <button id="printBtn" onclick="window.print()">印刷・PDF保存</button>
     </div>
-    <p>月額報酬と事前確定届出給与（賞与）の配分で、社会保険・税金・手取りがどう変わるかを試算します（令和8年度・東京都 協会けんぽ料率）</p>
+    <h1>賞与に寄せると、<br>手取りはいくら増える？</h1>
+    <p class="sub">役員報酬×賞与 社会保険最適化シミュレーター</p>
+    <p class="lead">月額報酬と事前確定届出給与（賞与）の配分で、社会保険・税金・手取りがどう変わるかを試算します（令和8年度・東京都 協会けんぽ料率）</p>
   </div>
 </header>
 <main>
@@ -105,7 +121,7 @@
   <div class="col-result">
     <div class="conclusion" id="conclusion"></div>
     <div class="card">
-      <h2>手取り・負担の内訳比較</h2>
+      <h2>手取り・負担の内訳</h2>
       <div class="legend"><span class="lg-net">手取り</span><span class="lg-tax">税金</span><span class="lg-sha">社会保険（本人）</span></div>
       <div class="bars" id="bars"></div>
     </div>
@@ -158,7 +174,7 @@
       <table class="premise" id="premise"></table>
     </div>
     <div class="warn">
-      <h3>⚠ ご利用上の注意</h3>
+      <h3>ご利用上の注意</h3>
       <ul>
         <li>賞与への配分は<b>事前確定届出給与の届出</b>（期限厳守・届出どおりの支給）が絶対条件です。</li>
         <li>厚生年金の標準報酬が下がるため、<b>将来の年金・傷病手当金等の給付水準は低下</b>します。</li>
@@ -168,7 +184,7 @@
   </div>
 </div>
 </main>
-<footer>山下税理士事務所 ｜ 令和8年度 東京都・協会けんぽ料率にもとづく概算シミュレーション</footer>
+<footer>山下税理士事務所 ｜ okanefuyasu.net ｜ 令和8年度 東京都・協会けんぽ料率にもとづく概算シミュレーション</footer>
 <script>
 // ===== 標準報酬月額 等級表（令和8年度） =====
 const KENPO_GRADES = [[0,58000],[63000,68000],[73000,78000],[83000,88000],[93000,98000],[101000,104000],[107000,110000],[114000,118000],[122000,126000],[130000,134000],[138000,142000],[146000,150000],[155000,160000],[165000,170000],[175000,180000],[185000,190000],[195000,200000],[210000,220000],[230000,240000],[250000,260000],[270000,280000],[290000,300000],[310000,320000],[330000,340000],[350000,360000],[370000,380000],[395000,410000],[425000,440000],[455000,470000],[485000,500000],[515000,530000],[545000,560000],[575000,590000],[605000,620000],[635000,650000],[665000,680000],[695000,710000],[730000,750000],[770000,790000],[810000,830000],[855000,880000],[905000,930000],[955000,980000],[1005000,1030000],[1055000,1090000],[1115000,1150000],[1175000,1210000],[1235000,1270000],[1295000,1330000],[1355000,1390000]];
@@ -267,14 +283,17 @@ function render(){
   const hojinUp = Math.round(dShaCo * opts.rHojin);
   const realMerit = dNet + dShaCo - hojinUp;
 
+  const sign = v => v===0 ? '±' : (v>0?'＋':'▲');
   document.getElementById('conclusion').innerHTML = `
-    <h2>■ 結論（全額月給払いとの比較）</h2>
-    <div class="big">実質トータルメリット：${realMerit===0?'±0円':(realMerit>0?'＋':'▲')+yen(Math.abs(realMerit))+'円'}／年</div>
-    <ul>
-      <li>役員個人の手取り：<b>${dNet>=0?'＋':'▲'}${yen(Math.abs(dNet))}円</b>（${(plan.net/plan.gross*100).toFixed(1)}%）</li>
-      <li>会社の社保負担減：<b>${dShaCo>=0?'＋':'▲'}${yen(Math.abs(dShaCo))}円</b>／公的負担トータル：<b>${dPub>=0?'▲':'＋'}${yen(Math.abs(dPub))}円</b></li>
-      <li>法人税等の増加（損金減×実効税率）：▲${yen(hojinUp)}円 を差引済み</li>
-    </ul>`;
+    <h2>結論 ｜ 全額を月給で払う場合との比較</h2>
+    <div class="label">実質トータルメリット（年間）</div>
+    <div class="big"><span class="mark">${sign(realMerit)}${yen(Math.abs(realMerit))}</span><small>円</small></div>
+    <div class="stats">
+      <div><span>役員個人の手取り</span><b class="${dNet>=0?'pos':'neg'}">${sign(dNet)}${yen(Math.abs(dNet))}円</b></div>
+      <div><span>会社の社会保険料</span><b class="${dShaCo>=0?'pos':'neg'}">${dShaCo>=0?'▲':'＋'}${yen(Math.abs(dShaCo))}円</b></div>
+      <div><span>法人税等の増加</span><b class="neg">＋${yen(hojinUp)}円</b></div>
+    </div>
+    <p class="fine">手取り率 ${(plan.net/plan.gross*100).toFixed(1)}%／公的負担トータル（本人＋会社） ${dPub>=0?'▲':'＋'}${yen(Math.abs(dPub))}円。法人税等の増加（会社の損金が減る分×実効税率）は差し引き済みです。</p>`;
 
   // 積み上げバー
   const mk = (r, label) => {
@@ -285,7 +304,7 @@ function render(){
         <div class="seg-tax" style="height:${h(r.tax)}%"></div>
         <div class="seg-sha" style="height:${h(r.shaSelf)}%"></div>
       </div>
-      <div class="barlabel">${label}<br>手取り ${yen(r.net)}円</div>
+      <div class="barlabel">${label}<br>手取り <b>${yen(r.net)}円</b></div>
     </div>`;
   };
   document.getElementById('bars').innerHTML = mk(base,'① 全額月給') + mk(plan,'② 月給＋賞与');
